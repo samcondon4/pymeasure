@@ -22,8 +22,33 @@
 # THE SOFTWARE.
 #
 
-from .lakeshore218 import LakeShore218
-from .lakeshore224 import LakeShore224
-from .lakeshore331 import LakeShore331
-from .lakeshore421 import LakeShore421
-from .lakeshore425 import LakeShore425
+import logging
+from pyvisa.constants import StopBits, Parity
+from pymeasure.instruments import Instrument
+from pymeasure.instruments.lakeshore.lakeshore_base import LakeShoreTemperatureChannel
+
+log = logging.getLogger(__name__)
+log.addHandler(logging.NullHandler())
+
+
+class LakeShore218(Instrument):
+    """ Represents the Lakeshore 218 temperature monitor and provides a high-level interface for
+    interacting with the instrument.
+    """
+
+    i_ch = Instrument.ChannelCreator(
+        LakeShoreTemperatureChannel,
+        [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        prefix='input_'
+    )
+
+    def __init__(self, adapter, **kwargs):
+        kwargs.setdefault('name', 'Lakeshore Model 218 Temperature Controller')
+        kwargs.setdefault('read_termination', '\r\n')
+        super().__init__(
+            adapter,
+            data_bits=7,
+            parity=Parity.odd,
+            stop_bits=StopBits.one,
+            **kwargs
+        )
