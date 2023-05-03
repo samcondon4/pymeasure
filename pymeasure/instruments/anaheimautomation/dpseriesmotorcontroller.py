@@ -93,16 +93,12 @@ class DPSeriesMotorController(Instrument):
         values=[1, 5000],
         cast=int,
     )
-
-    maxspeed = Instrument.control(
-        "VM", "M%i",
-        """Integer property that represents the motor controller's maximum (running) speed.
-        This property can be set.""",
-        validator=truncated_range,
-        values=[1, 50000],
-        cast=int,
+    
+    busy = Instrument.measurement(
+        "VF",
+        """Query to see if the controller is currently moving a motor."""
     )
-
+    
     direction = Instrument.control(
         "V+", "%s",
         """A string property that represents the direction in which the stepper motor will rotate
@@ -152,6 +148,12 @@ class DPSeriesMotorController(Instrument):
         cast=int,
     )
 
+    error_reg = Instrument.measurement(
+        "!",
+        """Reads the current value of the error codes register.""",
+        get_process=lambda err: DPSeriesErrors(int(err)),
+    )
+    
     encoder_window = Instrument.control(
         "VEW", "EW%i",
         """An integer property that represents the allowable error in encoder pulses from the
@@ -162,15 +164,21 @@ class DPSeriesMotorController(Instrument):
         cast=int,
     )
 
-    busy = Instrument.measurement(
-        "VF",
-        """Query to see if the controller is currently moving a motor."""
+    maxspeed = Instrument.control(
+        "VM", "M%i",
+        """Integer property that represents the motor controller's maximum (running) speed.
+        This property can be set.""",
+        validator=truncated_range,
+        values=[1, 50000],
+        cast=int,
     )
-
-    error_reg = Instrument.measurement(
-        "!",
-        """Reads the current value of the error codes register.""",
-        get_process=lambda err: DPSeriesErrors(int(err)),
+    
+    outputs = Instrument.control(
+        'VO', 'OR%i',
+        'An integer property representing the state of the open collector outputs.',
+        validator=strict_range,
+        values=[0, 255],
+        cast=int,
     )
 
     def check_errors(self):
