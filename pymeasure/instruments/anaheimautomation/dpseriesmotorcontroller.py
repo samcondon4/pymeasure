@@ -154,6 +154,11 @@ class DPSeriesMotorController(Instrument):
         get_process=lambda err: DPSeriesErrors(int(err)),
     )
     
+    encoder_step_position = Instrument.measurement(
+        'VEP',
+        """Query on the step position as read by an encoder."""
+    )
+    
     encoder_window = Instrument.control(
         "VEW", "EW%i",
         """An integer property that represents the allowable error in encoder pulses from the
@@ -237,10 +242,7 @@ class DPSeriesMotorController(Instrument):
         driver implements a conversion between steps and absolute units for the `absolute
         position` property. This property can be set.
         """
-        if self._encoder_enabled:
-            pos = self.ask("VEP")
-        else:
-            pos = self.ask("VZ")
+        pos = self.ask('VZ') 
         return int(pos)
 
     @step_position.setter
@@ -259,8 +261,12 @@ class DPSeriesMotorController(Instrument):
         absolute unit. Absolute units could be the position in meters of a linear stage or the
         angular position of a gimbal mount, etc. This property can be set.
         """
-        step_pos = self.step_position
-        return self.steps_to_absolute(step_pos)
+        if self._encoder_enabled: 
+            pos = self.encoder_step_position
+        else:
+            pos = self.step_position
+        
+        return self.steps_to_absolute(pos)
 
     @absolute_position.setter
     def absolute_position(self, abs_pos):
