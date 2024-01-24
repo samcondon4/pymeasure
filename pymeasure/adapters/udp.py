@@ -21,30 +21,30 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-import logging
 
-from .adapter import Adapter, FakeAdapter
+import socket
+from pymeasure.adapters import Adapter
 
-from .udp import UDPAdapter
-from .protocol import ProtocolAdapter
 
-from pymeasure.adapters.telnet import TelnetAdapter
+class UDPAdapter(Adapter):
+    """ Adapter class to support the UDP networking protocol.
+    """
 
-log = logging.getLogger(__name__)
-log.addHandler(logging.NullHandler())
+    def __init__(self, resource_name, preprocess_reply=None, log=None, **kwargs):
+        """ Initialize the UDP adapter.
 
-try:
-    from pymeasure.adapters.visa import VISAAdapter
-except ImportError:
-    log.warning("PyVISA library could not be loaded")
+        :param resource_name: String value in the format: 'IP::PORT'
+        """
+        super().__init__(preprocess_reply=preprocess_reply, log=log)
+        self.resource_name = resource_name
+        self.ip, port = self.resource_name.split('::')
+        self.port = int(port)
+        self.connection = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-try:
-    from pymeasure.adapters.serial import SerialAdapter
-    from pymeasure.adapters.prologix import PrologixAdapter
-except ImportError:
-    log.warning("PySerial library could not be loaded")
+    def _write_bytes(self, content, **kwargs):
+        self.connection.sendto(content, (self.ip, self.port))
 
-try:
-    from pymeasure.adapters.vxi11 import VXI11Adapter
-except ImportError:
-    log.warning("VXI-11 library could not be loaded")
+    def _read_bytes(self, count, break_on_termchar=None, **kwargs):
+        response, _ = self.connection.recvfrom(1024)
+        return response
+
